@@ -58,6 +58,9 @@ class NeumorphicButton extends StatefulWidget {
   final bool drawSurfaceAboveChild;
   final bool isEnabled;
   final bool provideHapticFeedback;
+  final Color highlightColor;
+  final NeumorphicButtonClickListener onTapDown;
+  final NeumorphicButtonClickListener onTapUp;
 
   const NeumorphicButton({
     Key key,
@@ -76,6 +79,9 @@ class NeumorphicButton extends StatefulWidget {
     this.style = const NeumorphicStyle(),
     this.isEnabled = true,
     this.provideHapticFeedback = true,
+    this.highlightColor,
+    this.onTapDown,
+    this.onTapUp,
   }) : super(key: key);
 
   @override
@@ -92,7 +98,7 @@ class _NeumorphicButtonState extends State<NeumorphicButton> {
     if (widget.style != initialStyle) {
       setState(() {
         this.initialStyle = widget.style;
-        depth = widget.style.depth;
+        depth = pressed ? widget.minDistance : widget.style.depth;
       });
     }
   }
@@ -117,6 +123,7 @@ class _NeumorphicButtonState extends State<NeumorphicButton> {
 
   Future<void> _handlePress() async {
     hasFinishedAnimationDown = false;
+    if (widget.onTapDown != null) widget.onTapDown();
     setState(() {
       pressed = true;
       depth = widget.minDistance;
@@ -144,6 +151,7 @@ class _NeumorphicButtonState extends State<NeumorphicButton> {
   //used to stay pressed if no tap up
   void _resetIfTapUp() {
     if (hasFinishedAnimationDown == true && hasTapUp == true && !hasDisposed) {
+      if (widget.onTapUp != null) widget.onTapUp();
       setState(() {
         pressed = false;
         depth = initialStyle.depth;
@@ -189,11 +197,17 @@ class _NeumorphicButtonState extends State<NeumorphicButton> {
           curve: widget.curve,
           padding: widget.padding,
           boxShape: widget.boxShape,
-          style: initialStyle.copyWith(depth: _getDepth()),
+          style: initialStyle.copyWith(depth: _getDepth(), color: _getColor()),
           child: widget.child,
         ),
       ),
     );
+  }
+
+  Color _getColor() {
+    if (widget.pressed ?? this.pressed) {
+      return widget.highlightColor;
+    }
   }
 
   double _getDepth() {
